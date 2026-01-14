@@ -10,9 +10,12 @@ struct dbheader_t {
 	unsigned int filesize;
 };
 
+#define NAME_LEN 256
+#define ADDRESS_LEN 256
+
 struct employee_t {
-	char name[256];
-	char address[256];
+	char name[NAME_LEN];
+	char address[ADDRESS_LEN];
 	unsigned int hours;
 };
 
