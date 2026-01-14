@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
     add_employee(dbhdr, &employees, addstring);
   }
 
-  if (list) {
+  if (list && dbhdr) {
     list_employees(dbhdr, employees);
   }
 
