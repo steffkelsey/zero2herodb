@@ -18,6 +18,8 @@ void print_usage(char *argv[]) {
 
 int main(int argc, char *argv[]) { 
   char *addstring = NULL;
+  char *removestring = NULL;
+  char *updatestring = NULL;
   char *filepath = NULL;
   bool newfile = false;
   bool list = false;
@@ -27,7 +29,7 @@ int main(int argc, char *argv[]) {
   struct dbheader_t *dbhdr = NULL;
   struct employee_t *employees = NULL;
 
-  while ((c = getopt(argc, argv, "nlf:a:")) != -1) {
+  while ((c = getopt(argc, argv, "nlf:a:r:u:")) != -1) {
     switch (c) {
       case 'a':
         addstring = optarg;
@@ -40,6 +42,12 @@ int main(int argc, char *argv[]) {
         break;
       case 'l':
         list = true;
+        break;
+      case 'r':
+        removestring = optarg;
+        break;
+      case 'u':
+        updatestring = optarg;
         break;
       case '?':
         printf("Unknown option -%c\n", c);
@@ -85,7 +93,24 @@ int main(int argc, char *argv[]) {
   }
 
   if (addstring) {
-    add_employee(dbhdr, &employees, addstring);
+    if (add_employee(dbhdr, &employees, addstring) == STATUS_ERROR) {
+      printf("Failed to add employee\n");
+      return -1;
+    }
+  }
+
+  if (updatestring) {
+    if (update_employee(dbhdr, employees, updatestring) == STATUS_ERROR) {
+      printf("Failed to update employee\n");
+      return -1;
+    }
+  }
+
+  if (removestring) {
+    if (remove_employee(dbhdr, &employees, removestring) == STATUS_ERROR) {
+      printf("Failed to remove employee\n");
+      return -1;
+    }
   }
 
   if (list && dbhdr) {
@@ -93,6 +118,12 @@ int main(int argc, char *argv[]) {
   }
 
   output_file(dbfd, dbhdr, employees);
+
+  free(dbhdr);
+  dbhdr = NULL;
+
+  free(employees);
+  employees = NULL;
 	
   return 0;
 }

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <arpa/inet.h>
@@ -53,6 +54,97 @@ int add_employee(struct dbheader_t *dbhdr, struct employee_t **employees, char *
   return STATUS_SUCCESS;
 }
 
+int remove_employee(struct dbheader_t *dbhdr, struct employee_t **employees, char *removestring) {
+  if (NULL == dbhdr) return STATUS_ERROR;
+  if (NULL == employees) return STATUS_ERROR;
+  if (NULL == *employees) return STATUS_ERROR;
+  if (NULL == removestring) return STATUS_ERROR;
+
+  char *name = strtok(removestring, ",");
+  if (NULL == name) return STATUS_ERROR;
+
+  // Temp for iterating over employees
+  struct employee_t *e = *employees;
+
+  int newcount = dbhdr->count;
+  int i = 0;
+  for (; i < dbhdr->count; i++) {
+    if (strcmp(e[i].name, name) == 0) {
+      printf("%s found at %d!\n", name, i);
+      newcount--;
+    }
+  }
+
+  // If none to delete, then move on
+  if (newcount == dbhdr->count) {
+    printf("Found 0 records to delete\n");
+    e = NULL;
+    return STATUS_SUCCESS;
+  }
+
+  printf("new count is %d\n", newcount);
+
+  if (newcount == 0) {
+    // TODO What if we deleted all records?
+    printf("Removing all records!\n");
+  }
+
+  // Allocate memory for a new array
+  struct employee_t *newe = calloc(newcount, sizeof(struct employee_t));
+  if (newe == NULL) {
+    printf("Malloc failed to create employees\n");
+    return STATUS_ERROR;
+  }
+
+  int index = 0;
+  for (i = 0; i < dbhdr->count; i++) {
+    printf("checking i=%d...\n", i);
+    if (strcmp(e[i].name, name) != 0) {
+      printf("copying %s...\n", e[i].name);
+      newe[index] = e[i];
+      index++;
+    }
+  }
+
+  free(e);
+  e = NULL;
+
+  dbhdr->count = newcount;
+  *employees = newe;
+
+  printf("dbhdr->count = %d\n", dbhdr->count);
+  return STATUS_SUCCESS;
+}
+
+int update_employee(struct dbheader_t *dbhdr, struct employee_t *employees, char *updatestring) {
+  if (NULL == dbhdr) return STATUS_ERROR;
+  if (NULL == employees) return STATUS_ERROR;
+  if (NULL == updatestring) return STATUS_ERROR;
+
+  char *name = strtok(updatestring, ",");
+  if (NULL == name) return STATUS_ERROR;
+
+  char *hours = strtok(NULL, ",");
+  if (NULL == hours) return STATUS_ERROR;
+
+  bool updated = false;
+  int i = 0;
+  for (; i < dbhdr->count; i++) {
+    if (strcmp(employees[i].name, name) == 0) {
+      employees[i].hours = atoi(hours);
+      updated = true;
+      break;
+    }
+  }
+
+  if (!updated) {
+    printf("No employee found with name '%s'\n", name);
+    return STATUS_ERROR;    
+  }
+
+  return STATUS_SUCCESS;
+}
+
 int read_employees(int fd, struct dbheader_t *dbhdr, struct employee_t **employeesOut) {
   if (fd < 0) {
     printf("Got a bnad FD from the user\n");
@@ -82,16 +174,24 @@ int read_employees(int fd, struct dbheader_t *dbhdr, struct employee_t **employe
 
 int output_file(int fd, struct dbheader_t *dbhdr, struct employee_t *employees) {
   if (fd < 0) {
-    printf("Got a bnad FD from the user\n");
+    printf("Got a bad FD from the user\n");
     return STATUS_ERROR;
   }
 
   int realcount = dbhdr->count;
 
+  printf("realcount: %d\n", realcount);
+
   dbhdr->version = htons(dbhdr->version);
   dbhdr->count = htons(dbhdr->count);
   dbhdr->magic = htonl(dbhdr->magic);
   dbhdr->filesize = htonl(sizeof(struct dbheader_t) + realcount*sizeof(struct employee_t));
+
+  // Truncate the file to zero each time to always overwrite from scratch
+  if (ftruncate(fd, 0) == -1) {
+    printf("Error truncating file\n");
+    return STATUS_ERROR;
+  }
 
   lseek(fd, 0, SEEK_SET);
   write(fd, dbhdr, sizeof(struct dbheader_t));
@@ -143,6 +243,7 @@ int validate_db_header(int fd, struct dbheader_t **headerOut) {
 
   struct stat dbstat = {0};
   fstat(fd, &dbstat);
+  printf("header->filesize: %d, st_size: %d\n", header->filesize, dbstat.st_size);
   if (header->filesize != dbstat.st_size) {
     printf("Corrupted database\n");
     free(header);
