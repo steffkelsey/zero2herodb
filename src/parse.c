@@ -60,8 +60,7 @@ int remove_employee(struct dbheader_t *dbhdr, struct employee_t **employees, cha
   if (NULL == *employees) return STATUS_ERROR;
   if (NULL == removestring) return STATUS_ERROR;
 
-  char *name = strtok(removestring, ",");
-  if (NULL == name) return STATUS_ERROR;
+  if (NULL == removestring) return STATUS_ERROR;
 
   // Temp for iterating over employees
   struct employee_t *e = *employees;
@@ -69,8 +68,8 @@ int remove_employee(struct dbheader_t *dbhdr, struct employee_t **employees, cha
   int newcount = dbhdr->count;
   int i = 0;
   for (; i < dbhdr->count; i++) {
-    if (strcmp(e[i].name, name) == 0) {
-      printf("%s found at %d!\n", name, i);
+    if (strcmp(e[i].name, removestring) == 0) {
+      printf("%s found at %d!\n", removestring, i);
       newcount--;
     }
   }
@@ -99,7 +98,7 @@ int remove_employee(struct dbheader_t *dbhdr, struct employee_t **employees, cha
   int index = 0;
   for (i = 0; i < dbhdr->count; i++) {
     printf("checking i=%d...\n", i);
-    if (strcmp(e[i].name, name) != 0) {
+    if (strcmp(e[i].name, removestring) != 0) {
       printf("copying %s...\n", e[i].name);
       newe[index] = e[i];
       index++;
