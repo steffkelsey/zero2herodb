@@ -2,6 +2,8 @@
 #include <string.h>
 #include <stdio.h>
 
+#define TOMBSTONE ((char *)0x1)
+
 // fn hash
 // params: 
 //   - val: a pointer to the value to hash
@@ -68,6 +70,38 @@ int kv_put(kv_t *db, char *key, char *value) {
 
   // the db is occupied;
   return -2;
+}
+
+// fn kv_get
+// params:
+//   - db: a pointer to the db
+//   - key: a pointer to the key
+// returns: the pointer to the value
+// NULL if not found
+char *kv_get(kv_t *db, char *key) {
+  if (!db || !key) return NULL;
+
+  size_t idx = hash(key, db->capacity);
+
+  for (int i = 0; i < db->capacity - 1; i++) {
+    size_t real_idx = (idx + i) % db->capacity;
+
+    kv_entry_t *entry = &db->entries[real_idx];
+
+    // check if there is no key
+    if (entry->key == NULL) {
+      return NULL;
+    }
+
+    // find and entry and the keys match
+    if (entry->key && 
+        entry->key != TOMBSTONE &&
+        !strcmp(entry->key, key)) {
+      return entry->value;
+    }
+  }
+
+  return NULL;
 }
 
 kv_t *kv_init(size_t capacity) {
