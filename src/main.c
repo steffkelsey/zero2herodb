@@ -18,8 +18,8 @@ int main() {
   //printf("%ld\n", table->capacity);
 
   kv_put(table, "hehe", "haha");
-  //kv_put(table, "hehe", "hoho");
-  kv_put(table, "lala", "hoho");
+  kv_put(table, "hehe", "hoho");
+  kv_put(table, "lala", "baba");
 
   for (int i = 0; i < table->capacity; i++) {
     if (table->entries[i].key) {
@@ -47,7 +47,11 @@ int main() {
 
   assert(kv_delete(db, "missing") == -1);
 
-  //kv_free(db);
+  kv_free(db);
+  db = NULL;
+
+  kv_free(table);
+  table = NULL;
 
   return 0;
 }
