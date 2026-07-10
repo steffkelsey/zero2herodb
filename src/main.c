@@ -11,11 +11,23 @@ void print_usage(char *argv[]) {
 }
 
 int main() { 
-  kv_t *table = kv_init(3);
+  kv_t *table = kv_init(1024);
 
   printf("%p\n", table);
-
   printf("%ld\n", table->capacity);
+
+  int idx = kv_put(table, "hehe", "haha");
+  printf("1.idx: %d\n", idx);
+  idx = kv_put(table, "hehe", "hoho");
+  printf("2.idx: %d\n", idx);
+  idx = kv_put(table, "lala", "hoho");
+  printf("3.idx: %d\n", idx);
+
+  for (int i = 0; i < table->capacity; i++) {
+    if (table->entries[i].key) {
+      printf("[%d]%s: %s\n", i, table->entries[i].key, table->entries[i].value);
+    }
+  }
 
   return 0;
 }
