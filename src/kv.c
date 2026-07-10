@@ -2,14 +2,12 @@
 #include <string.h>
 #include <stdio.h>
 
-#define TOMBSTONE ((char *)0x1)
-
 // fn hash
 // params: 
 //   - val: a pointer to the value to hash
 //   - capacity: the capacity of the db
 // returns: 
-size_t hash(char *val, int capacity) {
+size_t hash(const char *val, int capacity) {
   size_t hash = 0x13371337deadbeef;
 
   while(*val) {
@@ -31,7 +29,7 @@ size_t hash(char *val, int capacity) {
 //   - value: a pointer to the value
 // returns: the index of the key, otherwise on 
 // error, returns -1. on not found, return -2
-int kv_put(kv_t *db, char *key, char *value) {
+int kv_put(kv_t *db, const char *key, const char *value) {
   if (!db || !key || !value) return -1;
 
   size_t idx = hash(key, db->capacity);
@@ -48,7 +46,7 @@ int kv_put(kv_t *db, char *key, char *value) {
       char *newval = strdup(value);
       if (!newval) return -1;
       entry->value = newval;
-      return real_idx;
+      return 0;
     }
 
     // land in a slot that is "empty"
@@ -64,7 +62,7 @@ int kv_put(kv_t *db, char *key, char *value) {
       entry->key = newkey;
       entry->value = newval;
       db->count++;
-      return real_idx;
+      return 0;
     }
   }
 
