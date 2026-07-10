@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <assert.h>
 #include <kv.h>
 
 void print_usage(char *argv[]) {
@@ -34,6 +35,19 @@ int main() {
 
   char *val3 = kv_get(table, "no_exist");
   printf("kv_get('no_exist'): %s\n", val3);
+  
+  kv_t *db = kv_init(16);
+
+  kv_put(db, "name", "alice");
+  kv_put(db, "city", "berlin");
+
+  assert(kv_delete(db, "name") == 0);
+  assert(kv_get(db, "name") == NULL);
+  assert(db->count == 1);
+
+  assert(kv_delete(db, "missing") == -1);
+
+  //kv_free(db);
 
   return 0;
 }
