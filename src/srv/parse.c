@@ -25,9 +25,8 @@ void list_employees(struct dbheader_t *dbhdr, struct employee_t *employees) {
 int add_employee(struct dbheader_t *dbhdr, struct employee_t **employees, char *addstring) {
   if (NULL == dbhdr) return STATUS_ERROR;
   if (NULL == employees) return STATUS_ERROR;
-  if (NULL == *employees) return STATUS_ERROR;
   if (NULL == addstring) return STATUS_ERROR;
-
+ 
   char *name = strtok(addstring, ",");
   if (NULL == name) return STATUS_ERROR;
 
@@ -35,7 +34,7 @@ int add_employee(struct dbheader_t *dbhdr, struct employee_t **employees, char *
   if (NULL == addr) return STATUS_ERROR;
 
   char *hours = strtok(NULL, ",");
-  if (NULL == hours) return STATUS_ERROR;
+  if (NULL == hours || atoi(hours) == 0) return STATUS_ERROR;
 
   struct employee_t *e = *employees;
   e = realloc(e, sizeof(struct employee_t)*(dbhdr->count+1));
@@ -58,8 +57,6 @@ int remove_employee(struct dbheader_t *dbhdr, struct employee_t **employees, cha
   if (NULL == dbhdr) return STATUS_ERROR;
   if (NULL == employees) return STATUS_ERROR;
   if (NULL == *employees) return STATUS_ERROR;
-  if (NULL == removestring) return STATUS_ERROR;
-
   if (NULL == removestring) return STATUS_ERROR;
 
   // Temp for iterating over employees
@@ -146,7 +143,7 @@ int update_employee(struct dbheader_t *dbhdr, struct employee_t *employees, char
 
 int read_employees(int fd, struct dbheader_t *dbhdr, struct employee_t **employeesOut) {
   if (fd < 0) {
-    printf("Got a bnad FD from the user\n");
+    printf("Got a bad FD from the user\n");
     return STATUS_ERROR;
   }
 
@@ -172,6 +169,7 @@ int read_employees(int fd, struct dbheader_t *dbhdr, struct employee_t **employe
 }
 
 int output_file(int fd, struct dbheader_t *dbhdr, struct employee_t *employees) {
+  printf("outputting file....\n");
   if (fd < 0) {
     printf("Got a bad FD from the user\n");
     return STATUS_ERROR;
@@ -199,15 +197,25 @@ int output_file(int fd, struct dbheader_t *dbhdr, struct employee_t *employees) 
 
   for (; i < realcount; i++) {
     employees[i].hours = htonl(employees[i].hours);
+    // write to file
     write(fd, &employees[i], sizeof(struct employee_t));
+    // repack in memory structs to host endianness
+    employees[i].hours = ntohl(employees[i].hours);
   }
+
+  // repack in memory structs to host endianness
+  dbhdr->version = ntohs(dbhdr->version);
+  dbhdr->count = ntohs(dbhdr->count);
+  dbhdr->magic = ntohl(dbhdr->magic);
+  dbhdr->filesize = ntohl(sizeof(struct dbheader_t) + realcount*sizeof(struct employee_t));
 
   return STATUS_SUCCESS;
 }	
 
 int validate_db_header(int fd, struct dbheader_t **headerOut) {
+  printf("validating db header...\n");
   if (fd < 0) {
-    printf("Got a bnad FD from the user\n");
+    printf("Got a bad FD from the user\n");
     return STATUS_ERROR;
   }
   
@@ -217,9 +225,12 @@ int validate_db_header(int fd, struct dbheader_t **headerOut) {
     return STATUS_ERROR;
   }
 
+  printf("sizeof(struct dbheader_t): %d\n", sizeof(struct dbheader_t));
+  printf("sizeof(*header): %d\n", sizeof(*header));
   if (read(fd, header, sizeof(struct dbheader_t)) != sizeof(struct dbheader_t)) {
     perror("read");
     free(header);
+    printf("failed on header read...\n");
     return STATUS_ERROR;
   }
 
@@ -267,5 +278,4 @@ int create_db_header(struct dbheader_t **headerOut) {
 
   return STATUS_SUCCESS;
 }
-
 

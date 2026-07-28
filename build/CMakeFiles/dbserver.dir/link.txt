@@ -1,0 +1,1 @@
+/usr/bin/cc -Wl,--dependency-file=CMakeFiles/dbserver.dir/link.d CMakeFiles/dbserver.dir/src/srv/main.c.o -o dbserver
