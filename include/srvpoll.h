@@ -27,6 +27,17 @@ typedef struct {
 void init_clients(clientstate_t *states);
 int find_free_slot(clientstate_t *states);
 int find_slot_by_fd(clientstate_t *states, int fd);
-void handle_client_fsm(struct dbheader_t *dbhdr, struct employee_t *employees, clientstate_t *client, int dbfd);
+void handle_client_fsm(struct dbheader_t *dbhdr, struct employee_t **employees, clientstate_t *client, int dbfd);
+
+void fsm_general_reply(clientstate_t* const client, dbproto_hdr_t* const hdr, const dbproto_type_e type);
+inline void fsm_reply_hello_err(clientstate_t* const client, dbproto_hdr_t* const hdr) { fsm_general_reply(client, hdr, MSG_ERROR); }
+
+inline void fsm_reply_add(clientstate_t* const client, dbproto_hdr_t* const hdr) { fsm_general_reply(client, hdr, MSG_EMPLOYEE_ADD_RES); }
+inline void fsm_reply_add_err(clientstate_t* const client, dbproto_hdr_t* const hdr) { fsm_general_reply(client, hdr, MSG_ERROR); }
+
+inline void fsm_reply_del(clientstate_t* const client, dbproto_hdr_t* const hdr) { fsm_general_reply(client, hdr, MSG_EMPLOYEE_DEL_RES); }
+inline void fsm_reply_del_err(clientstate_t* const client, dbproto_hdr_t* const hdr) { fsm_general_reply(client, hdr, MSG_ERROR); }
+
+inline void fsm_reply_missing_err(clientstate_t* const client, dbproto_hdr_t* const hdr) { fsm_general_reply(client, hdr, MSG_EMPLOYEE_MISSING_RES); }
 
 #endif

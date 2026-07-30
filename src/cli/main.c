@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -9,8 +10,49 @@
 
 #include "common.h"
 
+int send_employee_list(int fd) {
+  char buf[4096] = {0};
+
+  dbproto_hdr_t *hdr = (dbproto_hdr_t*)buf;
+  hdr->type = MSG_EMPLOYEE_LIST_REQ;
+  hdr->len = 0;
+
+  // pack for network
+  hdr->type = htonl(hdr->type);
+  hdr->len = htons(hdr->len);
+
+  // write the request message
+  write(fd, buf, sizeof(dbproto_hdr_t));
+
+  // recv the response
+  read(fd, buf, sizeof(buf));
+
+  hdr->type = ntohl(hdr->type);
+  hdr->len = ntohs(hdr->len);
+
+  // handle error messages
+  if (hdr->type == MSG_ERROR) {
+    printf("Unable to list employees.\n");
+    close(fd);
+    return STATUS_ERROR;
+  }
+
+  // handle employee list response
+  if (hdr->type == MSG_EMPLOYEE_LIST_RES) {
+    dbproto_employee_list_resp *employee = (dbproto_employee_list_resp*)&hdr[1];
+
+    int i = 0;
+    for (; i < hdr->len; i++) {
+      read(fd, employee, sizeof(dbproto_employee_list_resp));
+      employee->hours = ntohl(employee->hours);
+      printf("%s, %s, %d\n", employee->name, employee->address, employee->hours);
+    }
+  }
+  
+  return STATUS_SUCCESS;
+}
+
 int send_employee(int fd, char *addstr) {
-  printf("send_employee...\n");
   char buf[4096] = {0};
 
   dbproto_hdr_t *hdr = (dbproto_hdr_t*)buf;
@@ -24,11 +66,9 @@ int send_employee(int fd, char *addstr) {
   hdr->type = htonl(hdr->type);
   hdr->len = htons(hdr->len);
 
-  printf("send_employee writing msg...\n");
   // write the hello message
   write(fd, buf, sizeof(dbproto_hdr_t) + sizeof(dbproto_employee_add_req));
 
-  printf("send_employee reading msg...\n");
   // recv the response
   read(fd, buf, sizeof(buf));
 
@@ -44,6 +84,41 @@ int send_employee(int fd, char *addstr) {
   
   // return success
   printf("Employee added.\n");
+  return STATUS_SUCCESS;
+}
+
+int remove_employee(int fd, char *delstr) {
+    char buf[4096] = {0};
+
+  dbproto_hdr_t *hdr = (dbproto_hdr_t*)buf;
+  hdr->type = MSG_EMPLOYEE_DEL_REQ;
+  hdr->len = 1;
+
+  // Send the add employee request with the data
+  dbproto_employee_del_req* employee = (dbproto_employee_del_req*)&hdr[1];
+  strncpy(employee->data, delstr, sizeof(employee->data));
+
+  hdr->type = htonl(hdr->type);
+  hdr->len = htons(hdr->len);
+
+  // write the hello message
+  write(fd, buf, sizeof(dbproto_hdr_t) + sizeof(dbproto_employee_del_req));
+
+  // recv the response
+  read(fd, buf, sizeof(buf));
+
+  hdr->type = ntohl(hdr->type);
+  hdr->len = ntohs(hdr->len);
+
+  // handle error messages
+  if (hdr->type == MSG_ERROR) {
+    printf("Improper format for delete employee string.\n");
+    close(fd);
+    return STATUS_ERROR;
+  }
+  
+  // return success
+  printf("Employee deleted.\n");
   return STATUS_SUCCESS;
 }
 
@@ -85,11 +160,13 @@ int send_hello(int fd) {
 
 int main (int argc, char *argv[]) {
   char *addarg = NULL;
+  char *delarg = NULL;
   char *portarg = NULL, *hostarg = NULL;
   unsigned short port = 0;
+  bool list = false;
 
   int c;
-  while ((c = getopt(argc, argv, "p:h:a:")) != -1) {
+  while ((c = getopt(argc, argv, "lp:h:a:r:")) != -1) {
     switch (c) {
       case 'a':
         addarg = optarg;
@@ -100,6 +177,12 @@ int main (int argc, char *argv[]) {
         break;
       case 'h':
         hostarg = optarg;
+        break;
+      case 'r':
+        delarg = optarg;
+        break;
+      case 'l':
+        list = true;
         break;
       case '?':
         printf("Unknown option -%c\n", c);
@@ -143,6 +226,14 @@ int main (int argc, char *argv[]) {
 
   if (addarg) {
     send_employee(fd, addarg);
+  }
+
+  if (delarg) {
+    remove_employee(fd, delarg);
+  }
+
+  if (list) {
+    send_employee_list(fd);
   }
 
   close(fd);

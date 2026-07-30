@@ -135,7 +135,7 @@ void poll_loop(unsigned short port, struct dbheader_t *dbhdr, struct employee_t 
             nfds--;
           }
         } else {
-          handle_client_fsm(dbhdr, employees, &clientStates[slot], dbfd);
+          handle_client_fsm(dbhdr, &employees, &clientStates[slot], dbfd);
         }
       }
     }
@@ -209,6 +209,11 @@ int main(int argc, char *argv[]) {
       printf("Failed to validate database header\n");
       return -1;
     }
+  }
+  
+  if (read_employees(dbfd, dbhdr, &employees) == STATUS_ERROR) {
+    printf("Failed to read employees\n");
+    return -1;
   }
 
   poll_loop(port, dbhdr, employees, dbfd);
