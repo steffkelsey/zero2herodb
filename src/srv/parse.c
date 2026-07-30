@@ -25,6 +25,7 @@ void list_employees(struct dbheader_t *dbhdr, struct employee_t *employees) {
 int add_employee(struct dbheader_t *dbhdr, struct employee_t **employees, char *addstring) {
   if (NULL == dbhdr) return STATUS_ERROR;
   if (NULL == employees) return STATUS_ERROR;
+  if (NULL == *employees) return STATUS_ERROR;
   if (NULL == addstring) return STATUS_ERROR;
  
   char *name = strtok(addstring, ",");
@@ -213,7 +214,6 @@ int output_file(int fd, struct dbheader_t *dbhdr, struct employee_t *employees) 
 }	
 
 int validate_db_header(int fd, struct dbheader_t **headerOut) {
-  printf("validating db header...\n");
   if (fd < 0) {
     printf("Got a bad FD from the user\n");
     return STATUS_ERROR;
@@ -225,8 +225,6 @@ int validate_db_header(int fd, struct dbheader_t **headerOut) {
     return STATUS_ERROR;
   }
 
-  printf("sizeof(struct dbheader_t): %d\n", sizeof(struct dbheader_t));
-  printf("sizeof(*header): %d\n", sizeof(*header));
   if (read(fd, header, sizeof(struct dbheader_t)) != sizeof(struct dbheader_t)) {
     perror("read");
     free(header);
@@ -253,7 +251,6 @@ int validate_db_header(int fd, struct dbheader_t **headerOut) {
 
   struct stat dbstat = {0};
   fstat(fd, &dbstat);
-  printf("header->filesize: %d, st_size: %d\n", header->filesize, dbstat.st_size);
   if (header->filesize != dbstat.st_size) {
     printf("Corrupted database\n");
     free(header);
