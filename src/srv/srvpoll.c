@@ -35,11 +35,15 @@ void fsm_reply_hello(clientstate_t *client, dbproto_hdr_t *hdr) {
   write(client->fd, hdr, sizeof(dbproto_hdr_t) + sizeof(dbproto_hello_resp));
 }
 
+extern inline void fsm_reply_err(clientstate_t* const client, dbproto_hdr_t* const hdr);
 extern inline void fsm_reply_hello_err(clientstate_t* const client, dbproto_hdr_t* const hdr);
 extern inline void fsm_reply_missing_err(clientstate_t* const client, dbproto_hdr_t* const hdr);
 
 extern inline void fsm_reply_add(clientstate_t* const client, dbproto_hdr_t* const hdr);
 extern inline void fsm_reply_add_err(clientstate_t* const client, dbproto_hdr_t* const hdr);
+
+extern inline void fsm_reply_upd(clientstate_t* const client, dbproto_hdr_t* const hdr);
+extern inline void fsm_reply_upd_err(clientstate_t* const client, dbproto_hdr_t* const hdr);
 
 extern inline void fsm_reply_del(clientstate_t* const client, dbproto_hdr_t* const hdr);
 extern inline void fsm_reply_del_err(clientstate_t* const client, dbproto_hdr_t* const hdr);
@@ -53,9 +57,11 @@ void send_employees(struct dbheader_t *dbhdr, struct employee_t *employees, clie
   ssize_t bytes_written = write(client->fd, hdr, sizeof(dbproto_hdr_t));
   if (bytes_written == -1) {
     perror("Unable to write from header to client->fd");
+    printf("error 1\n");
     return;
   }
   if (bytes_written != sizeof(dbproto_hdr_t)) {
+    printf("error 2\n");
     printf("Partial write. expected %zu bytes, but wrote %zd bytes\n", sizeof(dbproto_hdr_t), bytes_written);
     return;
   }
@@ -67,6 +73,7 @@ void send_employees(struct dbheader_t *dbhdr, struct employee_t *employees, clie
     strncpy(employee->name, employees[i].name, sizeof(employee->name));
     strncpy(employee->address, employees[i].address, sizeof(employee->address));
     employee->hours = htonl(employees[i].hours);
+    printf("sending employee[%d]: %s\n", i, employees[i].name);
     write(client->fd, employee, sizeof(dbproto_employee_list_resp));
   }
 }
@@ -121,7 +128,7 @@ void handle_client_fsm(struct dbheader_t *dbhdr, struct employee_t **employees, 
     if (hdr->type == MSG_EMPLOYEE_LIST_REQ) {
       printf("MSG_EMPLOYEE_LIST_REQ\n");
       send_employees(dbhdr, *employees, client);      
-    }
+    } 
     if (hdr->type == MSG_EMPLOYEE_DEL_REQ) {
       printf("MSG_EMPLOYEE_DEL_REQ\n");
       // get the employee data from the delete request
@@ -133,6 +140,25 @@ void handle_client_fsm(struct dbheader_t *dbhdr, struct employee_t **employees, 
         return;        
       } else {
         fsm_reply_del(client, hdr);
+        if (output_file(dbfd, dbhdr, *employees) != STATUS_SUCCESS) {
+          printf("error writing output file\n");
+        } else {
+          printf("Success!\n");
+          list_employees(dbhdr, *employees);
+        }
+      }
+    } 
+    if (hdr->type == MSG_EMPLOYEE_UPD_REQ) {
+      printf("MSG_EMPLOYEE_UPD_REQ\n");
+      // get the employee data from the update request
+      dbproto_employee_upd_req* employee = (dbproto_employee_upd_req*)&hdr[1];
+      printf("Updating employee: %s\n", employee->data);
+      if (update_employee(dbhdr, *employees, employee->data) != STATUS_SUCCESS) {
+        printf("error updating employee!\n");
+        fsm_reply_upd_err(client, hdr);
+        return;        
+      } else {
+        fsm_reply_upd(client, hdr);
         if (output_file(dbfd, dbhdr, *employees) != STATUS_SUCCESS) {
           printf("error writing output file\n");
         } else {

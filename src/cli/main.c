@@ -52,7 +52,7 @@ int send_employee_list(int fd) {
   return STATUS_SUCCESS;
 }
 
-int send_employee(int fd, char *addstr) {
+int send_employee_add(int fd, char *addstr) {
   char buf[4096] = {0};
 
   dbproto_hdr_t *hdr = (dbproto_hdr_t*)buf;
@@ -66,7 +66,7 @@ int send_employee(int fd, char *addstr) {
   hdr->type = htonl(hdr->type);
   hdr->len = htons(hdr->len);
 
-  // write the hello message
+  // write the message
   write(fd, buf, sizeof(dbproto_hdr_t) + sizeof(dbproto_employee_add_req));
 
   // recv the response
@@ -87,21 +87,56 @@ int send_employee(int fd, char *addstr) {
   return STATUS_SUCCESS;
 }
 
-int remove_employee(int fd, char *delstr) {
+int send_employee_update(int fd, char *addstr) {
+  char buf[4096] = {0};
+
+  dbproto_hdr_t *hdr = (dbproto_hdr_t*)buf;
+  hdr->type = MSG_EMPLOYEE_UPD_REQ;
+  hdr->len = 1;
+
+  // Send the add employee request with the data
+  dbproto_employee_upd_req* employee = (dbproto_employee_upd_req*)&hdr[1];
+  strncpy(employee->data, addstr, sizeof(employee->data));
+
+  hdr->type = htonl(hdr->type);
+  hdr->len = htons(hdr->len);
+
+  // write the message
+  write(fd, buf, sizeof(dbproto_hdr_t) + sizeof(dbproto_employee_upd_req));
+
+  // recv the response
+  read(fd, buf, sizeof(buf));
+
+  hdr->type = ntohl(hdr->type);
+  hdr->len = ntohs(hdr->len);
+
+  // handle error messages
+  if (hdr->type == MSG_ERROR) {
+    printf("Improper format for update employee string.\n");
+    close(fd);
+    return STATUS_ERROR;
+  }
+  
+  // return success
+  printf("Employee updated.\n");
+  return STATUS_SUCCESS;
+}
+
+int send_employee_remove(int fd, char *delstr) {
     char buf[4096] = {0};
 
   dbproto_hdr_t *hdr = (dbproto_hdr_t*)buf;
   hdr->type = MSG_EMPLOYEE_DEL_REQ;
   hdr->len = 1;
 
-  // Send the add employee request with the data
+  // Send the del employee request with the data
   dbproto_employee_del_req* employee = (dbproto_employee_del_req*)&hdr[1];
   strncpy(employee->data, delstr, sizeof(employee->data));
 
   hdr->type = htonl(hdr->type);
   hdr->len = htons(hdr->len);
 
-  // write the hello message
+  // write the request message
   write(fd, buf, sizeof(dbproto_hdr_t) + sizeof(dbproto_employee_del_req));
 
   // recv the response
@@ -161,12 +196,13 @@ int send_hello(int fd) {
 int main (int argc, char *argv[]) {
   char *addarg = NULL;
   char *delarg = NULL;
+  char *updarg = NULL;
   char *portarg = NULL, *hostarg = NULL;
   unsigned short port = 0;
   bool list = false;
 
   int c;
-  while ((c = getopt(argc, argv, "lp:h:a:r:")) != -1) {
+  while ((c = getopt(argc, argv, "lp:h:a:r:u:")) != -1) {
     switch (c) {
       case 'a':
         addarg = optarg;
@@ -180,6 +216,9 @@ int main (int argc, char *argv[]) {
         break;
       case 'r':
         delarg = optarg;
+        break;
+      case 'u':
+        updarg = optarg;
         break;
       case 'l':
         list = true;
@@ -225,11 +264,15 @@ int main (int argc, char *argv[]) {
   }
 
   if (addarg) {
-    send_employee(fd, addarg);
+    send_employee_add(fd, addarg);
+  }
+
+  if (updarg) {
+    send_employee_update(fd, updarg);
   }
 
   if (delarg) {
-    remove_employee(fd, delarg);
+    send_employee_remove(fd, delarg);
   }
 
   if (list) {

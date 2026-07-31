@@ -42,6 +42,10 @@ typedef struct {
 
 typedef struct {
   uint8_t data[1024];
+} dbproto_employee_upd_req;
+
+typedef struct {
+  uint8_t data[1024];
 } dbproto_employee_del_req;
 
 typedef struct {
