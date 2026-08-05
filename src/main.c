@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <assert.h>
-#include <kv.h>
+#include "kv.h"
 
 void print_usage(char *argv[]) {
   printf("Usage: %s -n -f <database file>\n", argv[0]);
