@@ -1,0 +1,5 @@
+[{
+  "directory": "/home/steff/dev/lowlevelacademy/zero2herodb",
+  "file": "/home/steff/dev/lowlevelacademy/zero2herodb/src/main.c",
+  "command": "gcc -c src/main.c -o obj/main.o -Iinc"
+}]
