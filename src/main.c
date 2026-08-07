@@ -1,10 +1,31 @@
 #include <stdio.h>
 #include <assert.h>
+#include <threads.h>
+#include <unistd.h>
+#include <stdlib.h>
 
 #include "threadpool.h"
 
+void example_task(void *arg) {
+  int* num = (int*)arg;
+  printf("Processing task %d\n", *num);
+  sleep(1);
+  free(arg);
+}
+
 int main() { 
-  printf("Running!\n");
+  threadpool_t pool;
+  threadpool_init(&pool);
+
+  for (int i = 0; i < 100; i++) {
+    int* task_num = malloc(sizeof(int));
+    *task_num = i;
+    threadpool_add_task(&pool, example_task, task_num);
+  }
+
+  sleep(5);
+
+  threadpool_destroy(&pool);
 
   return 0;
 }

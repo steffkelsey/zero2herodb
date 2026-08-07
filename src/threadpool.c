@@ -31,9 +31,22 @@ void threadpool_destroy(threadpool_t* pool) {
   pthread_cond_destroy(&(pool->notify));
 }
 
-//void threadpool_add_task(threadpool_t* pool, void (*function)(void*), void* arg) {
-//
-//}
+void threadpool_add_task(threadpool_t* pool, void (*function)(void*), void* arg) {
+  pthread_mutex_lock(&(pool->lock));
+
+  int next_rear = (pool->queue_back + 1) % QUEUE_SIZE;
+  if (pool->queued < QUEUE_SIZE) {
+    pool->task_queue[pool->queue_back].fn = function;
+    pool->task_queue[pool->queue_back].arg = arg;
+    pool->queue_back = next_rear;
+    pool->queued++;
+    pthread_cond_signal(&(pool->notify));
+  } else {
+    printf("Task queue is full! Cannot add more tasks.\n");
+  }
+
+  pthread_mutex_unlock(&(pool->lock));
+}
 
 void* thread_function(void* threadpool) {
   threadpool_t* pool = (threadpool_t*)threadpool;
