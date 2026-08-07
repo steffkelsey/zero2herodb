@@ -1,1 +1,12 @@
-build/compile_commands.json
+[
+{
+  "directory": "/home/steff/dev/lowlevelacademy/zero2herodb",
+  "file": "/home/steff/dev/lowlevelacademy/zero2herodb/src/srv/main.c",
+  "command": "gcc -c src/srv/main.c -o obj/srv/main.o -Iinclude"
+},
+{
+  "directory": "/home/steff/dev/lowlevelacademy/zero2herodb",
+  "file": "/home/steff/dev/lowlevelacademy/zero2herodb/src/cli/main.c",
+  "command": "gcc -c src/cli/main.c -o obj/cl/main.o -Iinclude"
+}
+]

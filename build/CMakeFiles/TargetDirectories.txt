@@ -1,3 +1,0 @@
-/home/steff/dev/lowlevelacademy/zero2herodb/build/CMakeFiles/dbserver.dir
-/home/steff/dev/lowlevelacademy/zero2herodb/build/CMakeFiles/edit_cache.dir
-/home/steff/dev/lowlevelacademy/zero2herodb/build/CMakeFiles/rebuild_cache.dir

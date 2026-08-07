@@ -1,8 +1,0 @@
-[
-{
-  "directory": "/home/steff/dev/lowlevelacademy/zero2herodb/build",
-  "command": "/usr/bin/cc   -std=gnu2x -o CMakeFiles/dbserver.dir/src/srv/main.c.o -c /home/steff/dev/lowlevelacademy/zero2herodb/src/srv/main.c",
-  "file": "/home/steff/dev/lowlevelacademy/zero2herodb/src/srv/main.c",
-  "output": "CMakeFiles/dbserver.dir/src/srv/main.c.o"
-}
-]
